@@ -90,18 +90,6 @@ class kostal_modbusquery:
         self.Adr[8195] = [8195,"Firmware Revision","U16",0]
         self.Adr[8228] = [8228,"Serialnumber","String",0]
 
-        self.Adr8195=[]
-        self.Adr8195 =[8195]
-        self.Adr8195.append("Firmware Revision - (powermeter)")
-        self.Adr8195.append("String")
-        self.Adr8195.append(0) 
-
-        self.Adr8228=[]
-        self.Adr8228 =[8228]
-        self.Adr8228.append("Serialnumber - (powermeter)")
-        self.Adr8228.append("String")
-        self.Adr8228.append(0) 
-
     # Routine to read a U16 from one address with 1 registers
     def ReadU16(self, myadr_dec):
         r1 = self.client.read_holding_registers(myadr_dec, 1, unit=1)
@@ -191,14 +179,14 @@ class kostal_modbusquery:
 
 
     except Exception as ex:
-        print("ERROR: Hit the following error :From subroutine kostal_modbusquery.run() :", ex)
+        logging.error("ERROR: Hit the following error :From subroutine kostal_modbusquery.run() : %s" % ex)
     # -----------------------------
 
     try:
         def updateStaticInformations(self):
             self.client = ModbusTcpClient(self.grid_ip, port=self.grid_port)
             self.client.connect() 
-            logging.warning("MODBUS client: Update static Informations")
+            logging.info("MODBUS client: Update static Informations")
 
             for key in self.Adr:
                 dtype = self.Adr[key][2]
@@ -227,9 +215,8 @@ class kostal_modbusquery:
 
             dbusservice['grid']['/ProductName'] = config['DEFAULT']['name']
 
-
     except Exception as ex:
-        print("ERROR: Hit the following error :From subroutine kostal_modbusquery.updateStaticInformations() :", ex)
+        logging.error("ERROR: Hit the following error :From subroutine kostal_modbusquery.updateStaticInformations() : %s" % ex)
     # -----------------------------
 # Here is the bit you need to create multiple new services - try as much as possible timplement the Victron Dbus API requirements.
 
@@ -283,7 +270,7 @@ def _run():
         Kostalquery = kostal_modbusquery()
         Kostalquery.run()
     except Exception as ex:
-        print("Issues querying KSEM -ERROR :", ex)
+        logging.error("MODBUS: Error in retrying to connect: %s" % ex)
     return True
 
 def _updateStaticInformations():
@@ -323,8 +310,6 @@ if 'DEFAULT' in config and 'logging' in config['DEFAULT']:
 else:
     logging.basicConfig(level=logging.WARNING)
 
-
-
 dbusservice = {}  # Dictonary to hold the multiple services
 
 # service defined by (base*, type*, id*, instance):
@@ -335,7 +320,7 @@ dbusservice['grid'] = new_service('com.victronenergy','grid','grid',0, 31)
 # Everything done so just set a time to run an update function to update the data values every x second
 _updateStaticInformations()
 gobject.timeout_add((1000 / int(config['DEFAULT']['freqency'])), _run)
-gobject.timeout_add(60000, _updateStaticInformations)
+#gobject.timeout_add(60000, _updateStaticInformations)
 
 logging.info("Connected to dbus, and switching over to gobject.MainLoop() (= event based)")
 mainloop = gobject.MainLoop()

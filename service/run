@@ -1,4 +1,4 @@
 #!/bin/sh
-echo "*** starting dbus-mqtt-battery ***"
+echo "*** starting dbus-ksem ***"
 exec 2>&1
 exec /data/dbus-ksem/dbus-ksem.py
