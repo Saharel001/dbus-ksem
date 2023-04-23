@@ -217,9 +217,21 @@ class kostal_modbusquery:
         self.Adr756.append("Float")
         self.Adr756.append(0) 
 
+        self.Adr8195=[]
+        self.Adr8195 =[8195]
+        self.Adr8195.append("Firmware Revision - (powermeter)")
+        self.Adr8195.append("Float")
+        self.Adr8195.append(0) 
+
+        self.Adr8228=[]
+        self.Adr8228 =[8228]
+        self.Adr8228.append("Serialnumber - (powermeter)")
+        self.Adr8228.append("String")
+        self.Adr8228.append(0) 
+
     # Routine to read a U32 from one address with 2 registers
     def ReadU32(self, myadr_dec):
-        r1 = self.client2.read_holding_registers(myadr_dec, 2, unit=1)
+        r1 = self.client.read_holding_registers(myadr_dec, 2, unit=1)
         U32register = BinaryPayloadDecoder.fromRegisters(
             r1.registers, byteorder=Endian.Big, wordorder=Endian.Big)
         result_U32register = U32register.decode_32bit_uint()
@@ -228,17 +240,26 @@ class kostal_modbusquery:
     
     # Routine to read a U64 from one address with 4 registers
     def ReadU64(self, myadr_dec):
-        r1 = self.client2.read_holding_registers(myadr_dec, 4, unit=1)
+        r1 = self.client.read_holding_registers(myadr_dec, 4, unit=1)
         U64register = BinaryPayloadDecoder.fromRegisters(
             r1.registers, byteorder=Endian.Big, wordorder=Endian.Big)
         result_U64register = U64register.decode_64bit_uint()
         return(result_U64register)
     # -----------------------------------------
 
+    # Routine to read a String from one address with 16 registers
+    def ReadString(self, myadr_dec):
+        r1 = self.client.read_holding_registers(myadr_dec, 4, unit=1)
+        StringRegister = BinaryPayloadDecoder.fromRegisters(
+            r1.registers, byteorder=Endian.Big )
+        result_StringRegister = StringRegister.decode_string(16)
+        return(result_StringRegister)
+    # -----------------------------------------
+
     try:
         def run(self):
-            self.client2 = ModbusTcpClient(self.grid_ip, port=self.grid_port)
-            self.client2.connect()
+            self.client = ModbusTcpClient(self.grid_ip, port=self.grid_port)
+            self.client.connect()
             
             self.Adr0[3] = self.ReadU32(self.Adr0[0])
             self.Adr2[3] = self.ReadU32(self.Adr2[0])
@@ -262,6 +283,7 @@ class kostal_modbusquery:
             self.Adr596[3] = self.ReadU64(self.Adr596[0])
             self.Adr676[3] = self.ReadU64(self.Adr676[0])
             self.Adr756[3] = self.ReadU64(self.Adr756[0])
+            self.Adr8228[3] = self.ReadString(self.Adr8228[0])
             
             self.KostalRegister.append(self.Adr0)
             self.KostalRegister.append(self.Adr2)
@@ -285,8 +307,9 @@ class kostal_modbusquery:
             self.KostalRegister.append(self.Adr596)
             self.KostalRegister.append(self.Adr676)
             self.KostalRegister.append(self.Adr756)
-            
-            self.client2.close()
+            self.KostalRegister.append(self.Adr8228)
+
+            self.client.close()
             
             # smartmeter
             
@@ -315,6 +338,8 @@ class kostal_modbusquery:
             dbusservice['grid']['/Ac/L3/Energy/Reverse'] = self.Adr756[3]/10000.0
 
             dbusservice['grid']['/Ac/Energy/Reverse'] = self.Adr516[3]/10000.0
+
+            dbusservice['grid']['/Serial'] = self.Adr8228[3].decode('UTF-8')
 
 
     except Exception as ex:
@@ -360,7 +385,7 @@ def new_service(base, type, physical, id, instance):
  # Create device type specific objects
     if physical == 'grid':
         self.add_path('/DeviceInstance', instance)
-        self.add_path('/Serial', config['INTERNAL']['serial'])
+        self.add_path('/Serial', None)
         self.add_path('/FirmwareVersion', config['INTERNAL']['version'])
         # value used in ac_sensor_bridge.cpp of dbus-cgwacs
         self.add_path('/ProductId', 45094)
