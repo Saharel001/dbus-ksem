@@ -53,8 +53,7 @@ import platform
 import configparser # for config/ini file
 
 # our own packages
-sys.path.insert(1, os.path.join(os.path.dirname(
-    __file__), '/opt/victronenergy/dbus-modem'))
+#sys.path.insert(1, os.path.join(os.path.dirname(__file__), '/opt/victronenergy/dbus-modem'))
 
 # Again not all of these needed this is just duplicating the Victron code.
 
@@ -229,6 +228,22 @@ class kostal_modbusquery:
         self.Adr8228.append("String")
         self.Adr8228.append(0) 
 
+        self.Adr8195=[]
+        self.Adr8195 =[8195]
+        self.Adr8195.append("Serialnumber - (powermeter)")
+        self.Adr8195.append("uint16")
+        self.Adr8195.append(0) 
+
+
+    # Routine to read a U16 from one address with 1 registers
+    def ReadU16(self, myadr_dec):
+        r1 = self.client.read_holding_registers(myadr_dec, 1, unit=1)
+        U16register = BinaryPayloadDecoder.fromRegisters(
+            r1.registers, byteorder=Endian.Big, wordorder=Endian.Big)
+        result_U16register = U16register.decode_16bit_uint()
+        return(result_U16register)
+    # -----------------------------------------
+
     # Routine to read a U32 from one address with 2 registers
     def ReadU32(self, myadr_dec):
         r1 = self.client.read_holding_registers(myadr_dec, 2, unit=1)
@@ -284,6 +299,8 @@ class kostal_modbusquery:
             self.Adr676[3] = self.ReadU64(self.Adr676[0])
             self.Adr756[3] = self.ReadU64(self.Adr756[0])
             self.Adr8228[3] = self.ReadString(self.Adr8228[0])
+            self.Adr8195[3] = self.ReadU16(self.Adr8195[0])
+            
             
             self.KostalRegister.append(self.Adr0)
             self.KostalRegister.append(self.Adr2)
@@ -308,6 +325,7 @@ class kostal_modbusquery:
             self.KostalRegister.append(self.Adr676)
             self.KostalRegister.append(self.Adr756)
             self.KostalRegister.append(self.Adr8228)
+            self.KostalRegister.append(self.Adr8195)
 
             self.client.close()
             
@@ -339,7 +357,41 @@ class kostal_modbusquery:
 
             dbusservice['grid']['/Ac/Energy/Reverse'] = self.Adr516[3]/10000.0
 
+            #dbusservice['grid']['/Serial'] = self.Adr8228[3].decode('UTF-8')
+            #VersionHelper = list("{:04x}".format(self.Adr8195[3]))
+
+            #dbusservice['grid']['/FirmwareVersion'] = VersionHelper[1] + "." + VersionHelper[3]
+
+            #dbusservice['grid']['/ProductName'] = config['INTERNAL']['name']
+
+
+    except Exception as ex:
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print("XXX- Hit the following error :From subroutine kostal_modbusquery :", ex)
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+# -----------------------------
+
+    try:
+        def updateStaticInformations(self):
+            self.client = ModbusTcpClient(self.grid_ip, port=self.grid_port)
+            self.client.connect()
+            
+            self.Adr8228[3] = self.ReadString(self.Adr8228[0])
+            self.Adr8195[3] = self.ReadU16(self.Adr8195[0])
+                     
+            self.KostalRegister.append(self.Adr8228)
+            self.KostalRegister.append(self.Adr8195)
+
+            self.client.close()
+            
+            # smartmeter
+
             dbusservice['grid']['/Serial'] = self.Adr8228[3].decode('UTF-8')
+            VersionHelper = list("{:04x}".format(self.Adr8195[3]))
+
+            dbusservice['grid']['/FirmwareVersion'] = VersionHelper[1] + "." + VersionHelper[3]
+
+            dbusservice['grid']['/ProductName'] = config['INTERNAL']['name']
 
 
     except Exception as ex:
@@ -386,10 +438,10 @@ def new_service(base, type, physical, id, instance):
     if physical == 'grid':
         self.add_path('/DeviceInstance', instance)
         self.add_path('/Serial', None)
-        self.add_path('/FirmwareVersion', config['INTERNAL']['version'])
+        self.add_path('/FirmwareVersion', None)
         # value used in ac_sensor_bridge.cpp of dbus-cgwacs
         self.add_path('/ProductId', 45094)
-        self.add_path('/ProductName', "Kostal KSEM")
+        self.add_path('/ProductName',None)
         self.add_path('/Ac/Energy/Forward', None, gettextcallback=gettextforkWh)
         self.add_path('/Ac/Energy/Reverse', None, gettextcallback=gettextforkWh)
         self.add_path('/Ac/L1/Energy/Reverse', None, gettextcallback=gettextforkWh)
@@ -399,16 +451,23 @@ def new_service(base, type, physical, id, instance):
     return self
 
 
-def _update():
+def _run():
     try:
         Kostalvalues = []
         Kostalquery = kostal_modbusquery()
         Kostalquery.run()
     except Exception as ex:
         print("Issues querying KSEM -ERROR :", ex)
-
     return True
 
+def _updateStaticInformations():
+    try:
+        Kostalvalues = []
+        Kostalquery = kostal_modbusquery()
+        Kostalquery.updateStaticInformations()
+    except Exception as ex:
+        print("Issues querying KSEM -ERROR :", ex)
+    return True
 
 try:
     config = configparser.ConfigParser()
@@ -432,20 +491,19 @@ base = 'com.victronenergy'
 dbusservice['grid'] = new_service(
     base, 'grid',           'grid',              0, 31)
 
-# Everything done so just set a time to run an update function to update the data values every 1 second
-
-gobject.timeout_add((1000 / int(config['INTERNAL']['freqency'])), _update)
-
+# Everything done so just set a time to run an update function to update the data values every x second
+_updateStaticInformations()
+gobject.timeout_add((1000 / int(config['INTERNAL']['freqency'])), _run)
+gobject.timeout_add(60000, _updateStaticInformations)
 
 print("Connected to dbus, and switching over to gobject.MainLoop() (= event based)")
 mainloop = gobject.MainLoop()
 mainloop.run()
 
 
-if __name__ == "__main__":
-    try:
-
-        Kostalquery = kostal_modbusquery()
-        Kostalquery.run()
-    except Exception as ex:
-        print("Issues querying KSEM -ERROR :", ex)
+#if __name__ == "__main__":
+#    try:
+#        Kostalquery = kostal_modbusquery()
+#        Kostalquery.run()
+#    except Exception as ex:
+#        print("Issues querying KSEM -ERROR :", ex)
