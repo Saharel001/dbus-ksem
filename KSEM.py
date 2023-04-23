@@ -79,7 +79,7 @@ DBusGMainLoop(set_as_default=True)
 class kostal_modbusquery:
     def __init__(self):
         #Change the IP address and port to suite your environment:
-        self.grid_ip="192.168.178.211"
+        self.grid_ip="10.10.10.10"
         self.grid_port="502"
         #No more changes required beyond this point
         self.KostalRegister = []
@@ -359,8 +359,8 @@ def new_service(base, type, physical, id, instance):
  # Create device type specific objects
     if physical == 'grid':
         self.add_path('/DeviceInstance', instance)
-        self.add_path('/Serial', "75022295")
-        self.add_path('/FirmwareVersion', "2.1.0")
+        self.add_path('/Serial', "12345678")
+        self.add_path('/FirmwareVersion', "2.0.0")
         # value used in ac_sensor_bridge.cpp of dbus-cgwacs
         self.add_path('/ProductId', 45094)
         self.add_path('/ProductName', "Kostal KSEM")
@@ -379,7 +379,7 @@ def _update():
         Kostalquery = kostal_modbusquery()
         Kostalquery.run()
     except Exception as ex:
-        print("Issues querying Kostal SEM -ERROR :", ex)
+        print("Issues querying KSEM -ERROR :", ex)
 
     return True
 
@@ -408,4 +408,4 @@ if __name__ == "__main__":
         Kostalquery = kostal_modbusquery()
         Kostalquery.run()
     except Exception as ex:
-        print("Issues querying Kostal SEM -ERROR :", ex)
+        print("Issues querying KSEM -ERROR :", ex)

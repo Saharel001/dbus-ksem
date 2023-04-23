@@ -1,3 +1,3 @@
 #!/bin/bash
-kill $(pgrep -f 'python /data/dbus-kostal_SEM/KSEM.py')
+kill $(pgrep -f 'python /data/dbus-KSEM/KSEM.py')
 
