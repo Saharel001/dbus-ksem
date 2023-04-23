@@ -1,2 +1,4 @@
 #!/bin/sh
-python /data/dbus-KSEM/KSEM.py
+echo "*** starting dbus-mqtt-battery ***"
+exec 2>&1
+exec /data/dbus-ksem/dbus-ksem.py

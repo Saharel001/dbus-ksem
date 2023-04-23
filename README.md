@@ -11,49 +11,47 @@ The Python script cyclically reads data from the Kostal inverter via the Modbus 
 
 Rename or copy the config.sample.ini in config.ini an change the Parameter in this file.
 
+
+### Pre-condition
+
+Two files from the [velib_python](https://github.com/victronenergy/velib_python):
+
+   - vedbus.py
+   - ve_utils.py
+
+The install.sh Script load this files automatically.
+
+
 ### Installation
 
 1. Copy the files to the /data folder on your venus:
 
-   - /data/dbus-KSEM/KSEM.py
-   - /data/dbus-KSE/kill_me.sh
-   - /data/dbus-KSEM/service/run
-   - /data/dbus-KSEM/config.ini
+   - /data/dbus-ksem/dbus-ksem.py
+   - /data/dbus-ksem/install.sh
+   - /data/dbus-ksem/uninstall.sh
+   - /data/dbus-ksem/restart.sh
+   - /data/dbus-ksem/service/run
+   - /data/dbus-ksem/config.ini
 
-2. Set permissions for files:
+2. start install:
 
-   `chmod 755 /data/dbus-KSEM/service/run`
-
-   `chmod 744 /data/dbus-KSEM/kill_me.sh`
-
-3. Get two files from the [velib_python](https://github.com/victronenergy/velib_python) and install them on your venus:
-
-   - /data/dbus-KSEM/vedbus.py
-   - /data/dbus-KSEM/ve_utils.py
-
-4. Add a symlink to the file /data/rc.local:
-
-   Open the /data/rc.local file via nano and add this to the file:
-
-   `ln -s /data/dbus-KSEM/service /service/dbus-KSEM`
-
-   The daemon-tools should automatically start this service within seconds.
+   `bash 755 /data/dbus-ksem/install.sh`
 
 ### Debugging
 
 You can check the status of the service with svstat:
 
-`svstat /service/dbus-KSEM`
+`svstat /service/dbus-ksem`
 
 It will show something like this:
 
-`/service/dbus-KSEM: up (pid 10078) 12 seconds`
+`/service/dbus-ksem: up (pid 10078) 12 seconds`
 
 If the number of seconds is always 0 or 1 or any other small number, it means that the service crashes and gets restarted all the time.
 
 When you think that the script crashes, start it directly from the command line:
 
-`python /data/dbus-KSEM/KSEM.py`
+`python /data/dbus-ksem/dbus-ksem.py`
 
 and see if it throws any error messages.
 
@@ -63,15 +61,15 @@ If the script stops with the message
 
 it means that the service is still running or another service is using that bus name.
 
-#### Restart the script
+#### Restart the service
 
 If you want to restart the script, for example after changing it, just run the following command:
 
-`/data/dbus-KSEM/kill_me.sh`
+`/data/dbus-ksem/restart.sh`
 
 The daemon-tools will restart the scriptwithin a few seconds.
 
-### Hardware
+### My Hardware
 
 In my installation at home, I am using the following Hardware:
 
