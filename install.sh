@@ -12,17 +12,17 @@ chmod 755 $SCRIPT_DIR/service/run
 if [ ! -f $SCRIPT_DIR/ve_utils.py ]
 then
     echo "File ve_utils.py does not exist in folder"
-    wget https://raw.githubusercontent.com/victronenergy/velib_python/master/ve_utils.py
+    wget https://raw.githubusercontent.com/victronenergy/velib_python/master/ve_utils.py -P $SCRIPT_DIR
 else
-    echo "File ve_utils.py found."
+    echo "File ve_utils.py already downloaded."
 fi
 
 if [ ! -f $SCRIPT_DIR/vedbus.py ]
 then
     echo "File vedbus.py does not exist in folder"
-    wget https://raw.githubusercontent.com/victronenergy/velib_python/master/vedbus.py
+    wget https://raw.githubusercontent.com/victronenergy/velib_python/master/vedbus.py -P $SCRIPT_DIR
 else
-    echo "File vedbus.py found."
+    echo "File vedbus.py already downloaded."
 fi
 
 # create sym-link to run script in deamon
