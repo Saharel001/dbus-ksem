@@ -1,4 +1,4 @@
-# dbus-KSEM Service as EM540
+# dbus-ksem Service (Kostal SEM as EM540)
 
 ### Purpose
 
@@ -35,7 +35,7 @@ The install.sh Script load this files automatically.
 
 2. start install:
 
-   `bash 755 /data/dbus-ksem/install.sh`
+   `bash /data/dbus-ksem/install.sh`
 
 ### Debugging
 
