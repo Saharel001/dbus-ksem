@@ -9,7 +9,7 @@ The Python script cyclically reads data from the Kostal inverter via the Modbus 
 
 ### Configuration
 
-In the Python file KSEM.py on line 82 and 83, you should put the IP and Port of your Smartmeter.
+Rename or copy the config.sample.ini in config.ini an change the Parameter in this file.
 
 ### Installation
 
@@ -18,6 +18,7 @@ In the Python file KSEM.py on line 82 and 83, you should put the IP and Port of 
    - /data/dbus-KSEM/KSEM.py
    - /data/dbus-KSE/kill_me.sh
    - /data/dbus-KSEM/service/run
+   - /data/dbus-KSEM/config.ini
 
 2. Set permissions for files:
 
@@ -74,7 +75,7 @@ The daemon-tools will restart the scriptwithin a few seconds.
 
 In my installation at home, I am using the following Hardware:
 
-- Kostal Plenticore 7
+- Kostal Plenticore 7 and Kostal Smart EnergyMeter G1
 - Victron MultiPlus-II - Battery Inverter (single phase)
 - Cerbo GX - Venus OS 2.93
 - 2x DIY Seplos 280Ah Box - LiFePO Battery

@@ -50,6 +50,7 @@ import dbus.service
 import sys
 import os
 import platform
+import configparser # for config/ini file
 
 # our own packages
 sys.path.insert(1, os.path.join(os.path.dirname(
@@ -79,8 +80,8 @@ DBusGMainLoop(set_as_default=True)
 class kostal_modbusquery:
     def __init__(self):
         #Change the IP address and port to suite your environment:
-        self.grid_ip="10.10.10.10"
-        self.grid_port="502"
+        self.grid_ip=config['MODBUS']['ipaddress']
+        self.grid_port=config['MODBUS']['port']
         #No more changes required beyond this point
         self.KostalRegister = []
 
@@ -359,8 +360,8 @@ def new_service(base, type, physical, id, instance):
  # Create device type specific objects
     if physical == 'grid':
         self.add_path('/DeviceInstance', instance)
-        self.add_path('/Serial', "12345678")
-        self.add_path('/FirmwareVersion', "2.0.0")
+        self.add_path('/Serial', config['INTERNAL']['serial'])
+        self.add_path('/FirmwareVersion', config['INTERNAL']['version'])
         # value used in ac_sensor_bridge.cpp of dbus-cgwacs
         self.add_path('/ProductId', 45094)
         self.add_path('/ProductName', "Kostal KSEM")
@@ -384,6 +385,18 @@ def _update():
     return True
 
 
+try:
+    config = configparser.ConfigParser()
+    config.read("%s/config.ini" % (os.path.dirname(os.path.realpath(__file__))))
+    if (config['MODBUS']['ipaddress'] == "IP_ADDR"):
+        print("ERROR:config.ini file is using invalid default values like IP_ADDR. The driver restarts in 60 seconds.")
+        time.sleep(60)
+        sys.exit()
+except:
+    print("ERROR:config.ini file not found. Copy or rename the config.sample.ini to config.ini. The driver restarts in 60 seconds.")
+    time.sleep(60)
+    sys.exit()
+
 dbusservice = {}  # Dictonary to hold the multiple services
 
 base = 'com.victronenergy'
@@ -395,12 +408,14 @@ dbusservice['grid'] = new_service(
     base, 'grid',           'grid',              0, 31)
 
 # Everything done so just set a time to run an update function to update the data values every 1 second
-gobject.timeout_add(100, _update)
+
+gobject.timeout_add((1000 / int(config['INTERNAL']['freqency'])), _update)
 
 
 print("Connected to dbus, and switching over to gobject.MainLoop() (= event based)")
 mainloop = gobject.MainLoop()
 mainloop.run()
+
 
 if __name__ == "__main__":
     try:
