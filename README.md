@@ -86,3 +86,4 @@ This project is build upon the basis of the inspirational work of:
 - kruki via photovoltaikforum.de
 - RalfZim via GitHub https://github.com/RalfZim
 - Kaeferfreund via Github https://github.com/kaeferfreund
+- mr-manuel via Github https://github.com/mr-manuel/venus-os_dbus-mqtt-battery
