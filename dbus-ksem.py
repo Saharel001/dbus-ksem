@@ -22,6 +22,8 @@
 #  Based on the documentation provided by Kostal:
 #
 import pymodbus
+import sys
+sys.path.insert(1, '/data/etc/vebus')
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
@@ -30,13 +32,11 @@ from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib as gobject  # Python 3.x
 import dbus
 import dbus.service
-import sys
 import os
 import platform
 import configparser # for config/ini file
 import collections
 import logging
-
 
 # our own packages
 #sys.path.insert(1, os.path.join(os.path.dirname(__file__), '/opt/victronenergy/dbus-modem'))
@@ -61,9 +61,6 @@ class kostal_modbusquery:
         #Change the IP address and port to suite your environment:
         self.grid_ip=config['MODBUS']['ipaddress']
         self.grid_port=config['MODBUS']['port']
-        #No more changes required beyond this point
-        #self.KostalRegister = []
-
         self.Adr = collections.OrderedDict()
         self.Adr[0] = [0,"Active power+","U32",0]
         self.Adr[2] = [2,"Active power-","U32",0]
@@ -213,14 +210,12 @@ class kostal_modbusquery:
 
             dbusservice['grid']['/FirmwareVersion'] = VersionHelper[1] + "." + VersionHelper[3]
 
-            dbusservice['grid']['/ProductName'] = config['DEFAULT']['name']
-
     except Exception as ex:
         logging.error("ERROR: Hit the following error :From subroutine kostal_modbusquery.updateStaticInformations() : %s" % ex)
     # -----------------------------
 # Here is the bit you need to create multiple new services - try as much as possible timplement the Victron Dbus API requirements.
 
-def new_service(base, type, physical, id, instance):
+def new_service(base, type, physical, id, instance, config):
     self = VeDbusService("{}.{}.{}_id{:02d}".format(
         base, type, physical,  id), dbusconnection())
 
@@ -231,8 +226,8 @@ def new_service(base, type, physical, id, instance):
 
     # Create the management objects, as specified in the ccgx dbus-api document
     self.add_path('/Mgmt/ProcessName', __file__)
-    self.add_path('/Mgmt/ProcessVersion','Unkown version, and running on Python ' + platform.python_version())
-    self.add_path('/Mgmt/Connection','Python ' + platform.python_version())
+    self.add_path('/Mgmt/ProcessVersion','1.0')
+    self.add_path('/Mgmt/Connection','Modbus TCP')
     self.add_path('/Connected', 1)
     self.add_path('/HardwareVersion', 0)
     self.add_path('/Ac/L1/Voltage', None, gettextcallback=gettextforV)
@@ -256,7 +251,7 @@ def new_service(base, type, physical, id, instance):
         self.add_path('/FirmwareVersion', None)
         # value used in ac_sensor_bridge.cpp of dbus-cgwacs
         self.add_path('/ProductId', 45094)
-        self.add_path('/ProductName',None)
+        self.add_path('/ProductName', config['DEFAULT']['name'])
         self.add_path('/Ac/Energy/Forward', None, gettextcallback=gettextforkWh)
         self.add_path('/Ac/Energy/Reverse', None, gettextcallback=gettextforkWh)
         self.add_path('/Ac/L1/Energy/Reverse', None, gettextcallback=gettextforkWh)
@@ -315,7 +310,7 @@ dbusservice = {}  # Dictonary to hold the multiple services
 # service defined by (base*, type*, id*, instance):
 # * items are include in service name
 # Create all the dbus-services we want
-dbusservice['grid'] = new_service('com.victronenergy','grid','grid',0, 31)
+dbusservice['grid'] = new_service('com.victronenergy', 'grid', 'grid', 0, 31, config)
 
 # Everything done so just set a time to run an update function to update the data values every x second
 _updateStaticInformations()
